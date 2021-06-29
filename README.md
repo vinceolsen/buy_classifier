@@ -8,6 +8,11 @@ Maximum data range: 2000-01-01
   - Nasdaq index: ^IXIC.csv
   - QQQ Nasdaq 100: QQQ.csv
   - Bitcoin from 2014-09-15: BTC-USD.csv
+  - S&P500 SPY ETF: SPY.csv
+  - Russel 2000 iShares ETF: IWM.csv
+  - Dow Jones Industrial Average SPDR ETF: DIA.csv
+  - 3x Leveraged ProShares UltraPro QQQ ETF: TQQQ.csv
+  - -3x Leveraged ProShares UltraPro Short QQQ EFT: SQQQ.csv
 - https://www.investing.com/crypto/bitcoin/historical-data
   - Bitcoin Historical Data - Investing.com.csv
  
