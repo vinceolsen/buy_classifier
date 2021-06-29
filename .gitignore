@@ -1,6 +1,5 @@
 # ignore data folders, download the data sets locally and process them locally
 preprocessed_data/
-raw_data/
 results/
 
 # pycharm config
