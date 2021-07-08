@@ -13,6 +13,8 @@ Maximum data range: 2000-01-01
   - Dow Jones Industrial Average SPDR ETF: DIA.csv
   - 3x Leveraged ProShares UltraPro QQQ ETF: TQQQ.csv
   - -3x Leveraged ProShares UltraPro Short QQQ EFT: SQQQ.csv
+  - Tether coin from 2015-02-23: USDT-USD.csv
+  - Treasury Yield 10 Years: ^TNX.csv
 - https://www.investing.com/crypto/bitcoin/historical-data
   - Bitcoin Historical Data - Investing.com.csv
  
