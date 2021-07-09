@@ -15,6 +15,8 @@ Maximum data range: 2000-01-01
   - -3x Leveraged ProShares UltraPro Short QQQ EFT: SQQQ.csv
   - Tether coin from 2015-02-23: USDT-USD.csv
   - Treasury Yield 10 Years: ^TNX.csv
+  - EUR/USD: EUR=X.csv
+  - Gold: GC=F.csv
 - https://www.investing.com/crypto/bitcoin/historical-data
   - Bitcoin Historical Data - Investing.com.csv
  
