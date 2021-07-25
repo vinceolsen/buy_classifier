@@ -38,7 +38,8 @@ class ProcessInput:
                 # Process date
                 d = row[0].split(' ')
                 month = d[0]
-                months = {month: index for index, month in enumerate(calendar.month_abbr) if month}
+                months = {month: index for index, month in enumerate(
+                    calendar.month_abbr) if month}
 
                 row[0] = datetime.date(int(d[2]), months[month], int(d[1]))
 
@@ -65,6 +66,7 @@ class ProcessInput:
         :return: None
         """
         with open(self.outfile, 'w', newline='') as f:
-            writer = csv.writer(f, delimiter=' ', quotechar='|', quoting=csv.QUOTE_MINIMAL)
+            writer = csv.writer(
+                f, delimiter=',', quotechar='|', quoting=csv.QUOTE_MINIMAL)
             for row in self.btc_historical_data:
                 writer.writerow(row)

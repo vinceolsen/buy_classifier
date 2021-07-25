@@ -1,0 +1,1 @@
+^IXIC.csv,VIX_History.csv,SPY.csv,QQQ.csv,^TNX.csv,TQQQ.csv,SQQQ.csv,IWM.csv,DIA.csv,GC=F.csv,CL=F.csv,SI=F.csv,USDT-USD.csv,ETH-USD.csv,EUR=X.csv,GBP=X.csv,CAD=X.csv,CNY=X.csv,JPY=X.csv,MXN=X.csv
