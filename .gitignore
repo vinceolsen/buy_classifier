@@ -1,7 +1,6 @@
 # ignore data folders, process them locally
 preprocessed_data/
 results/
-visualizations/
 
 # pycharm config
 .idea
