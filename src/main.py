@@ -10,6 +10,7 @@ import tensorflow as tf
 from tensorflow.keras import layers, models
 from matplotlib import pyplot as plt
 from sklearn.metrics import confusion_matrix
+from sklearn.preprocessing import MinMaxScaler
 from process_input import ProcessInput
 
 if __name__ == "__main__":
@@ -18,7 +19,9 @@ if __name__ == "__main__":
     dataset_folder = Path("raw_data")
     preprocessed_folder = Path("preprocessed_data")
 
-    PI = ProcessInput(dataset_folder, preprocessed_folder)
+    # You can process up to 5 datasets
+    PI = ProcessInput(dataset_folder, preprocessed_folder,
+                      series_size=10, dataset_size=3, threshold=0.01)
 
     # Run process_datasets() first to save new csv files
     # If csv files already exist, then use read_preprocessed data
@@ -28,6 +31,7 @@ if __name__ == "__main__":
 
     # Load datasets from preprocessed_data
     PI.read_preprocessed_data()
+    PI.normalize_data()
 
     # TODO Split dataset in training and testing sets
 

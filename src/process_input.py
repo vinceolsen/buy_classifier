@@ -8,11 +8,12 @@ import datetime
 import pandas as pd
 import numpy as np
 from pathlib import Path
+from sklearn.preprocessing import MinMaxScaler
 
 
 class ProcessInput:
 
-    def __init__(self, infile, outfile):
+    def __init__(self, infile, outfile, dataset_size=3, series_size=10, threshold=.01):
         """ Initialize the class
 
         :param infile: filename of the data to be processed
@@ -21,12 +22,13 @@ class ProcessInput:
         self.infile = infile
         self.outfile = outfile
         self.headers = None
-        self.btc_data = []
-        self.dataset_n = 3
+        self.dataset_n = dataset_size
+        self.series_size = series_size
         self.src_list = []
         self.dataset = []
         self.labels = []
         self.length = None
+        self.threshold = threshold
 
     def read_dataset_list(self):
         """
@@ -58,32 +60,41 @@ class ProcessInput:
         :params: Provide specific index using datasets.txt
         """
         self.read_dataset_list()
-        n = 10
         labels = []
         path_list = [self.outfile / x for x in self.data_string]
 
-        if index is None:
-            for name in path_list[:self.dataset_n]:
-                df = pd.read_csv(name)
+        if index is not None:
+            if index > self.dataset_n-1:
+                raise ValueError("Index value is out of range")
 
-                # Store shape of dataset
-                if self.length is None:
-                    self.length = df.shape[0]
-
-                # Generate labels
-                labels = self.generate_labels(df, n, labels)
-
-                # Stack data along the 3rd axis
-                data = df.to_numpy()
-                self.dataset = np.dstack((self.dataset, data))
-
-        else:
             df = pd.read_csv(path_list[index])
             self.length = df.shape[0]
 
             # Generate labels
-            labels = self.generate_labels(df, n, labels)
+            self.labels = self.generate_labels(df, labels)
             self.dataset = df.to_numpy()
+            return
+
+        for name in path_list[:self.dataset_n]:
+            df = pd.read_csv(name)
+
+            # Store shape of dataset
+            if self.length is None:
+                self.length = df.shape[0]
+
+                # Stack data along the 3rd axis
+                self.dataset = df.to_numpy()
+
+                # Generate labels
+                labels = self.generate_labels(df, labels)
+                continue
+
+            # Stack data along the 3rd axis
+            data = df.to_numpy()
+            self.dataset = np.dstack((self.dataset, data))
+
+            # Generate labels
+            labels = self.generate_labels(df, labels)
 
         self.labels = labels
 
@@ -113,7 +124,7 @@ class ProcessInput:
         # Drop dates column
         btc_df = btc_df.drop(['Date'], axis=1)
         self.write_to_csv(btc_df, 0)
-        self.length = ds_df.shape[0]
+        # self.length = ds_df.shape[0]
 
         return ds_df
 
@@ -148,30 +159,36 @@ class ProcessInput:
         ds_df = ds_df.drop(['Date'], axis=1)
         self.write_to_csv(ds_df, 1)
 
-    def generate_labels(self, df, n, labels=None):
+    def generate_labels(self, df, labels=None):
         """
         Generates labels for a dataset
         :params: dataframe, size of series, existing labels (default is none)
         :return: labels
         """
 
-        threshold = .01
         if labels == None:
             labels = []
 
+        # Target column
         prices = df['Open']
         prices = prices.to_numpy()
 
         row_num = 0
+        # iterate price rows
         for row in prices:
-            if row_num + n >= self.length:
+
+            # Full series of prices
+            if row_num + self.series_size < self.length:
+                series = prices[row_num:self.series_size+row_num+1]
+
+            # No full series left in the dataset so only do what remains
+            else:
                 series = prices[row_num:self.length+1]
 
-            else:
-                series = prices[row_num:n+row_num+1]
-
+            # Calculate the change in the price relative to the series
             val = self.calculate_change(row, series)
-            labels.append(1) if val >= threshold else labels.append(0)
+            labels.append(1) if val >= self.threshold else labels.append(0)
+
             row_num += 1
 
         return labels
@@ -189,3 +206,38 @@ class ProcessInput:
             return change
         else:
             return 0
+
+    def normalize_data(self):
+        """
+        Normalizes each dataset individually using MinMaxScaler
+        :return: none
+        """
+
+        n = self.dataset.shape[2]
+        scaler = {}
+        norm_data = []
+
+        for i in range(n):
+            scaler[i] = MinMaxScaler()
+
+            # Target a single dataset
+            dataset = self.dataset[:, :, i:i+1]
+
+            # Remove 3rd axis
+            dataset = np.squeeze(dataset)
+
+            # First dataset
+            if i == 0:
+                # Scale and round
+                norm_data = scaler[i].fit_transform(dataset)
+                norm_data = np.round(norm_data, decimals=11)
+                continue
+
+            # Scale and round
+            x = scaler[i].fit_transform(dataset)
+            x = np.round(x, decimals=11)
+
+            # Restack
+            norm_data = np.dstack((norm_data, x))
+
+        self.dataset = norm_data
