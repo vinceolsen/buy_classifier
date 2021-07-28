@@ -16,11 +16,6 @@ from pathlib import Path
 from process_input import ProcessInput
 
 # Update the sys.path to search in the python project directory
-"""
-os.chdir(os.path.dirname(__file__))
-print(os.getcwd() + '/../')
-sys.path.append(os.getcwd() + '/../')
-"""
 
 def process_datasets(src, btc_src):
 
@@ -115,11 +110,8 @@ if __name__ == "__main__":
     infile = dataset_folder / 'BTC-Historical-Price.csv'
     outfile = preprocessed_folder / 'BTC-Historical-Price.csv'
 
-    """
-    PI = ProcessInput(infile, outfile)
-    PI.read_btc_historical_csv()
-    PI.write_btc_historical_csv()
-    """
+    # Run process_datasets() first to save new csv files
+
 
     # Read in datasets file names
     src_in = dataset_folder / "datasets.txt"
