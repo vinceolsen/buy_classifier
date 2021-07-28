@@ -17,41 +17,6 @@ from process_input import ProcessInput
 
 # Update the sys.path to search in the python project directory
 
-def process_datasets(src, btc_src):
-
-    # Read BTC-Historical-Price
-    btc_df = pd.read_csv(btc_src, sep=',', names=[
-                         "Date", "Price", "Open", "High", "Low", "Vol", "Change"])
-    print('Initial shape', btc_df.shape)
-
-    # Read 1st dataset and convert to numpy
-    ds_df = pd.read_csv(src[0])
-
-    # Filter BTC dataframe by Date
-    # btc_df will match the dates of M-F market datasets
-    btc_df = btc_df.set_index(['Date'])
-    temp = ds_df.set_index(['Date'])
-    btc_df = btc_df[btc_df.index.isin(temp.index)].reset_index()
-    print('Resulting shape', btc_df.shape)
-
-    # OPTION 1: DROP Columns so dataset features can match
-    # btc_df.drop(['Price', 'Change'], axis=1)
-
-    # BTC prices and Dataset features don't match yet so we don't stack
-    # btc = btc_df.to_numpy()
-    dataset = ds_df.to_numpy()
-    # dataset = np.dstack((btc, dataset))
-
-    # Read remaining datasets and stack them along the 3rd axis
-    for set in src[1:]:
-        df = pd.read_csv(set)
-        data = df.to_numpy()
-        dataset = np.dstack((dataset, data))
-    print('Loaded datasets shape:', dataset.shape)
-
-    return dataset
-
-
 def evaluate_model(trainX, trainy, testX, testy):
     verbose, epochs, batch_size = 0, 10, 32
     n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
@@ -99,22 +64,19 @@ if __name__ == "__main__":
     dataset_folder = Path("raw_data")
     preprocessed_folder = Path("preprocessed_data")
 
-    PI = ProcessInput(dataset_folder, preprocessed_folder)
+    # You can process up to 5 datasets
+    PI = ProcessInput(dataset_folder, preprocessed_folder,
+                      series_size=10, dataset_size=3, threshold=0.01)
 
     # Run process_datasets() first to save new csv files
     # If csv files already exist, then use read_preprocessed data
 
     # Process datasets
     PI.process_datasets()
-    # Process BTC historical data
-    #infile = dataset_folder / 'BTC-Historical-Price.csv'
-    #outfile = preprocessed_folder / 'BTC-Historical-Price.csv'
-
-    # Run process_datasets() first to save new csv files
-
 
     # Load datasets from preprocessed_data
     PI.read_preprocessed_data()
+    PI.normalize_data()
 
     # TODO Split dataset in training and testing sets
 
