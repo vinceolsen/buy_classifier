@@ -15,6 +15,7 @@ from sklearn.metrics import confusion_matrix
 from pathlib import Path
 from process_input import ProcessInput
 
+
 # Update the sys.path to search in the python project directory
 
 def evaluate_model(trainX, trainy, testX, testy):
@@ -46,7 +47,7 @@ def summarize_results(scores):
 # run an experiment
 def run_experiment(dataset, repeats=10):
     # load data
-    trainX, trainy, testX, testy = split_data(dataset)
+    # trainX, trainy, testX, testy = split_data(dataset)
     # repeat experiment
     scores = list()
     for r in range(repeats):
@@ -57,16 +58,35 @@ def run_experiment(dataset, repeats=10):
     # summarize results
     summarize_results(scores)
 
+def run_experiment2(dataset, labels, training_indices, testing_indices, validation_indices, history_length, repeats=10):
+    scores = list()
+
+    for r in range(repeats):
+        #training
+        correct, incorrect = 0, 0
+        for day in training_indices:
+            chunk = dataset[day-history_length:day,1:6]
+            label = labels[day]
+            prediction = model.predict(chunk)
+            if prediction == label:
+                correct+=1
+            else:
+                incorrect+=1
+        score = (correct / (correct + incorrect)) * 100
+        print('>#%d: %.3f' % (r + 1, score))
+        scores.append(score)
+    # summarize results
+    summarize_results(scores)
 
 if __name__ == "__main__":
-
     # Set up for Windows and Linux
     dataset_folder = Path("raw_data")
     preprocessed_folder = Path("preprocessed_data")
 
     # You can process up to 5 datasets
+    history_length = 506
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      series_size=10, dataset_size=3, threshold=0.01)
+                      max_buy_holding_period=10, num_of_securtities=3, target_roi=0.01, history_length=history_length)
 
     # Run process_datasets() first to save new csv files
     # If csv files already exist, then use read_preprocessed data
@@ -76,19 +96,11 @@ if __name__ == "__main__":
 
     # Load datasets from preprocessed_data
     PI.read_preprocessed_data()
-    PI.normalize_data()
+    # PI.normalize_data()  # let's try training without this first just to get everything working and see what effect normalizing has
 
-    # TODO Split dataset in training and testing sets
+    dataset, labels, training_indices, testing_indices, validation_indices = PI.get_data(.80, .10, .10)
 
-    # Setup data
-    # Temporarily only using the first 4 datasets
-    #dataset = process_datasets(src_list[0:4], outfile)
-    #trainX, trainY, textX, testY = split_data(dataset)
-
-    #evaluate_model(trainX, trainy, testX, testy)
-
-    # run the experiment
-    run_experiment(dataset)
+    run_experiment2(dataset, labels, training_indices, testing_indices, validation_indices, history_length)
 
     # Setup model
 
