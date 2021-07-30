@@ -58,27 +58,30 @@ def run_experiment(dataset, repeats=10):
     # summarize results
     summarize_results(scores)
 
+
 def run_experiment2(dataset, labels, training_indices, testing_indices, validation_indices, history_length, repeats=10):
     # this is just an example of how to iterate over the datasets, this code does not work
     # TODO: get the training, testing, and validating to work
     scores = list()
 
     for r in range(repeats):
-        #training
+        # training
         correct, incorrect = 0, 0
         for day in training_indices:
-            chunk = dataset[day-history_length:day,1:6]
+            day = int(day)
+            chunk = dataset[day - history_length:day, 1:6]
             label = labels[day, 1]
             prediction = model.predict(chunk)
             if prediction == label:
-                correct+=1
+                correct += 1
             else:
-                incorrect+=1
+                incorrect += 1
         score = (correct / (correct + incorrect)) * 100
         print('>#%d: %.3f' % (r + 1, score))
         scores.append(score)
     # summarize results
     summarize_results(scores)
+
 
 if __name__ == "__main__":
     # Set up for Windows and Linux
