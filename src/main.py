@@ -59,6 +59,8 @@ def run_experiment(dataset, repeats=10):
     summarize_results(scores)
 
 def run_experiment2(dataset, labels, training_indices, testing_indices, validation_indices, history_length, repeats=10):
+    # this is just an example of how to iterate over the datasets, this code does not work
+    # TODO: get the training, testing, and validating to work
     scores = list()
 
     for r in range(repeats):
