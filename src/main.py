@@ -66,7 +66,7 @@ def run_experiment2(dataset, labels, training_indices, testing_indices, validati
         correct, incorrect = 0, 0
         for day in training_indices:
             chunk = dataset[day-history_length:day,1:6]
-            label = labels[day]
+            label = labels[day, 1]
             prediction = model.predict(chunk)
             if prediction == label:
                 correct+=1
