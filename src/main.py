@@ -251,7 +251,9 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
     predictions = np.array([])
     for x in val_chunks:
         predictions = np.concatenate(
-            [predictions, np.argmax(model.predict(x.reshape(1, history_length*num_of_features, num_of_security_datasets)), axis=-1)])
+            [predictions,
+             np.argmax(model.predict(x.reshape(1, history_length * num_of_features, num_of_security_datasets)),
+                       axis=-1)])
 
     # TODO
     print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
@@ -274,7 +276,8 @@ if __name__ == "__main__":
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets - 1, target_roi=0.01, history_length=history_length)
+                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets - 1, target_roi=0.01,
+                      history_length=history_length)
 
     # Run process_datasets() first to save new csv files
     # If csv files already exist, then use read_preprocessed data
