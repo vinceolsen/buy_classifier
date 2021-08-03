@@ -27,15 +27,44 @@ def create_model(n_timesteps, n_features, n_outputs):
     :return:
     """
     verbose, epochs, batch_size = 0, 10, 32
-    #n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
+    # n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
     model = models.Sequential()
-    #model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, 4)))
+    # model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, 4)))
     model.add(layers.Conv2D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, n_features, 4)))
     # TODO verify kernel_size for this
-    #model.add(layers.Conv1D(filters=64, kernel_size=1, activation='relu'))
+    # model.add(layers.Conv1D(filters=64, kernel_size=1, activation='relu'))
     model.add(layers.Conv2D(filters=64, kernel_size=1, activation='relu'))
     model.add(layers.Dropout(0.5))
     model.add(layers.MaxPooling2D(pool_size=2))
+    model.add(layers.Flatten())
+    model.add(layers.Dense(100, activation='relu'))
+    model.add(layers.Dense(n_outputs, activation='softmax'))
+    opt = tf.keras.optimizers.Adam(learning_rate=0.01)
+    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
+
+    model.summary()
+    return model
+
+
+def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datasets):
+    """
+    :param n_timesteps: The number of days to
+    :param n_features:
+    :param n_outputs:
+    :return:
+    """
+    verbose, epochs, batch_size = 0, 10, 32
+    # n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
+    model = models.Sequential()
+    model.add(layers.Conv1D(filters=64, kernel_size=5, activation='relu',
+                            input_shape=(n_timesteps * n_features, number_of_security_datasets)))
+    # model.add(layers.Conv2D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, n_features, 4)))
+    # TODO verify kernel_size for this
+    model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu'))
+    # model.add(layers.Conv2D(filters=64, kernel_size=1, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    # model.add(layers.MaxPooling2D(pool_size=2))
+    model.add(layers.MaxPooling1D())
     model.add(layers.Flatten())
     model.add(layers.Dense(100, activation='relu'))
     model.add(layers.Dense(n_outputs, activation='softmax'))
@@ -94,7 +123,8 @@ def run_experiment(model, dataset, labels, training_indices, testing_indices, va
         i += 1
 
     # Train model
-    history = model.fit(chunks, chunk_labels, epochs=epochs, steps_per_epoch=128, shuffle=False)  # , callbacks=my_callbacks)
+    history = model.fit(chunks, chunk_labels, epochs=epochs, steps_per_epoch=128,
+                        shuffle=False)  # , callbacks=my_callbacks)
     print(history)
 
     j = 0
@@ -127,6 +157,101 @@ def run_experiment(model, dataset, labels, training_indices, testing_indices, va
         predictions = np.concatenate(
             [predictions, np.argmax(model.predict(x.reshape(1, history_length, 5, n_attributes)), axis=-1)])
 
+    # TODO
+    print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
+
+    print("Train: Number of buy signals: ", list(chunk_labels.flatten()).count(1))
+    print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
+    print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
+
+
+def run_1d_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
+                      num_of_features,
+                      epochs=10):
+    """
+
+    :param model: The ML Model
+    :param dataset: The dataset to use
+    :param labels: The labels for the data
+    :param training_indices: List of indices for which data points should be trained on
+    :param testing_indices: List of indices for which data points should be tested on
+    :param validation_indices: List of indices for which data points should be validated on
+    :param history_length: The number of days to include in the history chunk
+    :param epochs: How many times should the ML algorithm be trained
+    :return: None
+    """
+    # Add shape to the arrays
+    num_of_security_datasets = dataset.shape[2]
+    chunks = np.empty([len(training_indices), history_length * num_of_features, num_of_security_datasets])
+    chunk_labels = np.empty([len(training_indices), 1])
+    test_chunks = np.empty([len(testing_indices), history_length * num_of_features, num_of_security_datasets])
+    test_chunk_labels = np.empty([len(testing_indices), 1])
+    val_chunks = np.empty([len(validation_indices), history_length * num_of_features, num_of_security_datasets])
+    val_chunk_labels = np.empty([len(validation_indices), 1])
+
+    # Prep Data
+    i = 0
+    print('num of training inputs', len(training_indices))
+    for day in training_indices:
+        day = int(day)
+        dataset_history = slice(day - history_length + 1, day + 1)
+        chunk = dataset[dataset_history, 1]
+        for feature in range(2, 1 + num_of_features):
+            chunk = np.concatenate([chunk, dataset[dataset_history, feature]])
+        label = labels[day, 1]
+        # convert values to 'float32' the model complains without it TODO Verify this doesn't ruin the data
+        c = np.asarray(chunk).astype('float32')
+        # print('chunk shape:', c.shape)
+        # print('chunks shape:', chunks.shape)
+        chunks[i] = c
+        chunk_labels[i] = label
+        i += 1
+
+    # Train model
+    history = model.fit(chunks, chunk_labels, epochs=epochs, steps_per_epoch=128,
+                        shuffle=False)  # , callbacks=my_callbacks)
+    print(history)
+
+    j = 0
+    print('num of testing inputs', len(testing_indices))
+    for day in testing_indices:
+        day = int(day)
+
+        dataset_history = slice(day - history_length + 1, day + 1)
+        chunk = dataset[dataset_history, 1]
+        for feature in range(2, 1 + num_of_features):
+            chunk = np.concatenate([chunk, dataset[dataset_history, feature]])
+        label = labels[day, 1]
+        # convert values to 'float32' the model complains without it TODO Verify this doesn't ruin the data
+        c = np.asarray(chunk).astype('float32')
+        # print('chunk shape:', c.shape)
+        # print('chunks shape:', chunks.shape)
+        test_chunks[j] = c
+        test_chunk_labels[j] = label
+        j += 1
+
+    k = 0
+    print('num of validation inputs', len(validation_indices))
+    for day in validation_indices:
+        day = int(day)
+        dataset_history = slice(day - history_length + 1, day + 1)
+        chunk = dataset[dataset_history, 1]
+        for feature in range(2, 1 + num_of_features):
+            chunk = np.concatenate([chunk, dataset[dataset_history, feature]])
+        label = labels[day, 1]
+        # convert values to 'float32' the model complains without it TODO Verify this doesn't ruin the data
+        c = np.asarray(chunk).astype('float32')
+        val_chunks[k] = c
+        val_chunk_labels[k] = label
+        k += 1
+
+    eval_loss = model.evaluate(test_chunks, test_chunk_labels)
+    print(eval_loss)
+
+    predictions = np.array([])
+    for x in val_chunks:
+        predictions = np.concatenate(
+            [predictions, np.argmax(model.predict(x.reshape(1, history_length*num_of_features, num_of_security_datasets)), axis=-1)])
 
     # TODO
     print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
@@ -135,6 +260,7 @@ def run_experiment(model, dataset, labels, training_indices, testing_indices, va
     print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
     print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
 
+
 if __name__ == "__main__":
     # Set up for Windows and Linux
     dataset_folder = Path("raw_data")
@@ -142,10 +268,13 @@ if __name__ == "__main__":
 
     history_length = 506
     epochs = 40
+    num_of_security_datasets = 3
+    num_of_features = 6  # Open,High,Low,Close,Adj Close,Volume
+    num_of_outputs = 1  # buy signal yes or no
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=10, num_of_securtities=3, target_roi=0.01, history_length=history_length)
+                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets - 1, target_roi=0.01, history_length=history_length)
 
     # Run process_datasets() first to save new csv files
     # If csv files already exist, then use read_preprocessed data
@@ -159,6 +288,9 @@ if __name__ == "__main__":
 
     dataset, labels, training_indices, testing_indices, validation_indices = PI.get_data(.80, .10, .10)
 
-    model = create_model(history_length, 5, 1)
-    run_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
-                   epochs=epochs)
+    # model = create_model(history_length, 5, 1)
+    # run_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
+    #                epochs=epochs)
+    model = create_1d_model(history_length, num_of_features, num_of_outputs, num_of_security_datasets)
+    run_1d_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
+                      num_of_features, epochs=epochs)
