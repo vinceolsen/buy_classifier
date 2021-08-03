@@ -2,9 +2,6 @@
 Explorations in Data Science
 Crypto buy/sell indicators project
 """
-import calendar
-import csv
-import datetime
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -60,6 +57,12 @@ class ProcessInput:
         df.to_csv(dir, index=False)
 
     def write_np_array_to_csv(self, data, name):
+        """
+
+        :param data:
+        :param name:
+        :return:
+        """
         name = name + '.csv'
         np.savetxt('preprocessed_data/' + name, data, delimiter=",", fmt='%s')
         np.savetxt('visualizations/' + name, data, delimiter=",", fmt='%s')
@@ -262,6 +265,13 @@ class ProcessInput:
         self.dataset = norm_data
 
     def get_data(self, training_portion, testing_portion, validation_portion):
+        """ Get the data to pass into the ML model
+
+        :param training_portion: float Percentage of the dataset to use for training
+        :param testing_portion: float Percentage of the dataset to use for testing
+        :param validation_portion: float Percentage of the dataset to use for validation
+        :return: dataset, labels, training_indices, testing_indices, validation_indices
+        """
         training_indices = np.array([])
         testing_indices = np.array([])
         validation_indices = np.array([])
