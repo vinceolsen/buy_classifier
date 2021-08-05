@@ -300,7 +300,7 @@ class ProcessInput:
                                                  self.model_input_start_index + training_count + testing_count + validation_count + 1),
                                                            validation_count)))
 
-        print('training indices', training_indices)
-        print('testing indices', testing_indices)
-        print('validation indices', validation_indices)
+        # print('training indices', training_indices)
+        # print('testing indices', testing_indices)
+        # print('validation indices', validation_indices)
         return self.dataset, self.labels, training_indices, testing_indices, validation_indices

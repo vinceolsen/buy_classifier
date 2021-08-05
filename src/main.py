@@ -56,19 +56,89 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
     verbose, epochs, batch_size = 0, 10, 32
     # n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
     model = models.Sequential()
-    model.add(layers.Conv1D(filters=64, kernel_size=5, activation='relu',
-                            input_shape=(n_timesteps * n_features, number_of_security_datasets)))
-    # model.add(layers.Conv2D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, n_features, 4)))
-    # TODO verify kernel_size for this
-    model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu'))
-    # model.add(layers.Conv2D(filters=64, kernel_size=1, activation='relu'))
-    model.add(layers.Dropout(0.5))
-    # model.add(layers.MaxPooling2D(pool_size=2))
+    layer_coefficients = (2, 8, 32, 128)
+    model.add(layers.Conv1D(
+        filters=n_features * layer_coefficients[0],
+        kernel_size=n_timesteps // layer_coefficients[0],
+        strides=1,
+        padding="valid",
+        data_format="channels_last",
+        dilation_rate=1,
+        groups=1,
+        activation='relu',
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None,
+        input_shape=(n_timesteps * n_features, number_of_security_datasets)
+    ))
+    model.add(layers.Conv1D(
+        filters=n_features * layer_coefficients[1],
+        kernel_size=n_timesteps // layer_coefficients[1],
+        strides=1,
+        padding="valid",
+        data_format="channels_last",
+        dilation_rate=1,
+        groups=1,
+        activation='relu',
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None
+    ))
+    model.add(layers.Conv1D(
+        filters=n_features * layer_coefficients[2],
+        kernel_size=n_timesteps // layer_coefficients[2],
+        strides=1,
+        padding="valid",
+        data_format="channels_last",
+        dilation_rate=1,
+        groups=1,
+        activation='relu',
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None
+    ))
+    model.add(layers.Conv1D(
+        filters=n_features * layer_coefficients[3],
+        kernel_size=n_timesteps // layer_coefficients[3],
+        strides=1,
+        padding="valid",
+        data_format="channels_last",
+        dilation_rate=1,
+        groups=1,
+        activation='relu',
+        use_bias=True,
+        kernel_initializer="glorot_uniform",
+        bias_initializer="zeros",
+        kernel_regularizer=None,
+        bias_regularizer=None,
+        activity_regularizer=None,
+        kernel_constraint=None,
+        bias_constraint=None
+    ))
     model.add(layers.MaxPooling1D())
     model.add(layers.Flatten())
     model.add(layers.Dense(100, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(50, activation='relu'))
+    model.add(layers.Dropout(0.5))
+    model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dense(n_outputs, activation='softmax'))
-    opt = tf.keras.optimizers.Adam(learning_rate=0.01)
+    opt = tf.keras.optimizers.Adam(learning_rate=0.1)
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
     model.summary()
@@ -207,11 +277,6 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
         chunk_labels[i] = label
         i += 1
 
-    # Train model
-    history = model.fit(chunks, chunk_labels, epochs=epochs, steps_per_epoch=128,
-                        shuffle=False)  # , callbacks=my_callbacks)
-    print(history)
-
     j = 0
     print('num of testing inputs', len(testing_indices))
     for day in testing_indices:
@@ -244,6 +309,33 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
         val_chunks[k] = c
         val_chunk_labels[k] = label
         k += 1
+
+    # Train model
+    # chunks = np.concatenate([chunks, val_chunks])
+    # chunk_labels = np.concatenate([chunk_labels, val_chunk_labels])
+    repeats = 10
+    training_batch_size = (len(testing_indices) + len(validation_indices)) // 20
+    history = model.fit(chunks.repeat(repeats, 0),
+                        chunk_labels.repeat(repeats),
+                        batch_size=training_batch_size,
+                        epochs=epochs,
+                        verbose='auto',
+                        callbacks=None,
+                        validation_split=0.,
+                        validation_data=(val_chunks, val_chunk_labels),
+                        shuffle=True,
+                        class_weight=None,
+                        sample_weight=None,
+                        initial_epoch=0,
+                        steps_per_epoch=(len(testing_indices) * repeats) // training_batch_size,
+                        validation_steps=None,
+                        validation_batch_size=None,
+                        validation_freq=1,
+                        max_queue_size=10,
+                        workers=1,
+                        use_multiprocessing=True
+                        )  # , callbacks=my_callbacks)
+    print(history)
 
     eval_loss = model.evaluate(test_chunks, test_chunk_labels)
     print(eval_loss)
