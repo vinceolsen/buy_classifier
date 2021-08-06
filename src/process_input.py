@@ -7,6 +7,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.preprocessing import MinMaxScaler
 import random
+from itertools import combinations
 
 
 class ProcessInput:
@@ -56,9 +57,12 @@ class ProcessInput:
         dir = self.outfile / self.data_string[index]
         df.to_csv(dir, index=False)
 
+    def write_to_csv_with_(self, filename, df):
+        dir = self.outfile / filename.name
+        df.to_csv(dir, index=False)
+
     def write_np_array_to_csv(self, data, name):
         """
-
         :param data:
         :param name:
         :return:
@@ -108,35 +112,21 @@ class ProcessInput:
         # Generate labels
         self.generate_labels()
 
-    def align_initial_dataframes(self):
-        """
-        Aligns axes of first two datasets for stacking 
-        :return: bitcoin price df and df of next dataset on list
-        """
-        # Read BTC-Historical-Price
-        btc_df = pd.read_csv(self.src_list[0])
-
-        # Read 1st US Exchange dataset
-        ds_df = pd.read_csv(self.src_list[1])
-
-        # Drop null values from the price
-        btc_df = btc_df.dropna()
-
-        # Drop holidays and weekend from BTC price data
-        btc_df = self.drop_dates(btc_df, ds_df)
-
-        # Drop dates from financial data where BTC was null
-        ds_df = self.drop_dates(ds_df, btc_df)
-
-        # Save csv with dates
-        self.write_to_csv(btc_df, 0, visual=True)
-
-        # Drop dates column
-        # btc_df = btc_df.drop(['Date'], axis=1)  # let's keep the dates here for troubleshooting and drop them before feeding them into the model
-        self.write_to_csv(btc_df, 0)
-        # self.length = ds_df.shape[0]
-
-        return ds_df
+    # def align_dataframes(self, df1, df2):
+    #     """
+    #     Aligns axes of first two datasets for stacking
+    #     :return: bitcoin price df and df of next dataset on list
+    #     """
+    #     # Drop null values from the price
+    #
+    #
+    #     # Drop dates that are missing from one data set
+    #     df1 = self.drop_dates(df1, df2)
+    #
+    #     # Drop dates that are missing from one data set
+    #     df2 = self.drop_dates(df2, df1)
+    #
+    #     return df1, df2
 
     def drop_dates(self, df1, df2_ref):
         """
@@ -154,20 +144,24 @@ class ProcessInput:
         :return: None
         """
         self.read_dataset_list()
-        ds_df = self.align_initial_dataframes()
+        files_in_preprocessed_folder = []
+        # dir = self.outfile / filename.name
+        for file in self.src_list:
+            data_set = pd.read_csv(file)
+            self.write_to_csv_with_(file, data_set)
+            files_in_preprocessed_folder.append(self.outfile / file.name)
 
-        num = 2
-        for set in self.src_list[2:self.dataset_n]:
-            df = pd.read_csv(set)
-
-            # Prepare data
-            df = self.drop_dates(df, ds_df)
-            # df = df.drop(['Date'], axis=1)  # lets keep dates for trouble shooting and slice them off before passing the data to the model
-            self.write_to_csv(df, num)
-            num += 1
-
-        # ds_df = ds_df.drop(['Date'], axis=1)  # lets keep dates for trouble shooting and slice them off before passing the data to the model
-        self.write_to_csv(ds_df, 1)
+        for security_combination in list(combinations(files_in_preprocessed_folder, 2)):
+            print(security_combination)
+            df1 = pd.read_csv(security_combination[0])
+            df2 = pd.read_csv(security_combination[1])
+            df1 = df1.dropna()
+            df2 = df2.dropna()
+            # Drop dates that are missing from one data set
+            df1 = self.drop_dates(df1, df2)
+            df2 = self.drop_dates(df2, df1)
+            self.write_to_csv_with_(security_combination[0], df1)
+            self.write_to_csv_with_(security_combination[1], df2)
 
     def generate_labels(self):
         """
@@ -298,7 +292,7 @@ class ProcessInput:
                                              random.sample(range(
                                                  self.model_input_start_index + training_count + testing_count + 1,
                                                  self.model_input_start_index + training_count + testing_count + validation_count + 1),
-                                                           validation_count)))
+                                                 validation_count)))
 
         # print('training indices', training_indices)
         # print('testing indices', testing_indices)

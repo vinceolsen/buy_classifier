@@ -56,44 +56,71 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
     verbose, epochs, batch_size = 0, 10, 32
     # n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
     model = models.Sequential()
-    layer_coefficients = (2, 8, 32, 128)
-    model.add(layers.Conv1D(
+    layer_coefficients = (8, 64, 256)
+    # model.add(layers.Conv1D(
+    #     filters=n_features * layer_coefficients[0],
+    #     kernel_size=n_timesteps // layer_coefficients[0],
+    #     strides=1,
+    #     padding="valid",
+    #     data_format="channels_last",
+    #     dilation_rate=1,
+    #     groups=1,
+    #     activation='relu',
+    #     use_bias=True,
+    #     kernel_initializer="glorot_uniform",
+    #     bias_initializer="zeros",
+    #     kernel_regularizer=None,
+    #     bias_regularizer=None,
+    #     activity_regularizer=None,
+    #     kernel_constraint=None,
+    #     bias_constraint=None,
+    #     input_shape=(n_timesteps * n_features, number_of_security_datasets)
+    # ))
+    model.add(layers.SeparableConv1D(
         filters=n_features * layer_coefficients[0],
         kernel_size=n_timesteps // layer_coefficients[0],
         strides=1,
         padding="valid",
         data_format="channels_last",
         dilation_rate=1,
-        groups=1,
+        depth_multiplier=1,  # increasing this will lead to more depth convolutions
         activation='relu',
         use_bias=True,
-        kernel_initializer="glorot_uniform",
+        depthwise_initializer="glorot_uniform",
+        pointwise_initializer="glorot_uniform",
         bias_initializer="zeros",
-        kernel_regularizer=None,
+        depthwise_regularizer=None,
+        pointwise_regularizer=None,
         bias_regularizer=None,
         activity_regularizer=None,
-        kernel_constraint=None,
+        depthwise_constraint=None,
+        pointwise_constraint=None,
         bias_constraint=None,
         input_shape=(n_timesteps * n_features, number_of_security_datasets)
     ))
-    model.add(layers.Conv1D(
+    model.add(layers.MaxPooling1D(pool_size=2))
+    model.add(layers.SeparableConv1D(
         filters=n_features * layer_coefficients[1],
         kernel_size=n_timesteps // layer_coefficients[1],
         strides=1,
         padding="valid",
         data_format="channels_last",
         dilation_rate=1,
-        groups=1,
+        depth_multiplier=1,  # increasing this will lead to more depth convolutions
         activation='relu',
         use_bias=True,
-        kernel_initializer="glorot_uniform",
+        depthwise_initializer="glorot_uniform",
+        pointwise_initializer="glorot_uniform",
         bias_initializer="zeros",
-        kernel_regularizer=None,
+        depthwise_regularizer=None,
+        pointwise_regularizer=None,
         bias_regularizer=None,
         activity_regularizer=None,
-        kernel_constraint=None,
+        depthwise_constraint=None,
+        pointwise_constraint=None,
         bias_constraint=None
     ))
+    model.add(layers.MaxPooling1D(pool_size=4))
     model.add(layers.Conv1D(
         filters=n_features * layer_coefficients[2],
         kernel_size=n_timesteps // layer_coefficients[2],
@@ -112,33 +139,53 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
         kernel_constraint=None,
         bias_constraint=None
     ))
-    model.add(layers.Conv1D(
-        filters=n_features * layer_coefficients[3],
-        kernel_size=n_timesteps // layer_coefficients[3],
-        strides=1,
-        padding="valid",
-        data_format="channels_last",
-        dilation_rate=1,
-        groups=1,
-        activation='relu',
-        use_bias=True,
-        kernel_initializer="glorot_uniform",
-        bias_initializer="zeros",
-        kernel_regularizer=None,
-        bias_regularizer=None,
-        activity_regularizer=None,
-        kernel_constraint=None,
-        bias_constraint=None
-    ))
-    model.add(layers.MaxPooling1D())
+    # model.add(layers.Dropout(0.1))
+    # model.add(layers.Conv1D(
+    #     filters=n_features * layer_coefficients[3],
+    #     kernel_size=n_timesteps // layer_coefficients[3],
+    #     strides=1,
+    #     padding="valid",
+    #     data_format="channels_last",
+    #     dilation_rate=1,
+    #     groups=1,
+    #     activation='relu',
+    #     use_bias=True,
+    #     kernel_initializer="glorot_uniform",
+    #     bias_initializer="zeros",
+    #     kernel_regularizer=None,
+    #     bias_regularizer=None,
+    #     activity_regularizer=None,
+    #     kernel_constraint=None,
+    #     bias_constraint=None
+    # ))
+    # model.add(layers.Dropout(0.1))
+    # model.add(layers.Conv1D(
+    #     filters=n_features * layer_coefficients[4],
+    #     kernel_size=n_timesteps // layer_coefficients[4],
+    #     strides=1,
+    #     padding="valid",
+    #     data_format="channels_last",
+    #     dilation_rate=1,
+    #     groups=1,
+    #     activation='relu',
+    #     use_bias=True,
+    #     kernel_initializer="glorot_uniform",
+    #     bias_initializer="zeros",
+    #     kernel_regularizer=None,
+    #     bias_regularizer=None,
+    #     activity_regularizer=None,
+    #     kernel_constraint=None,
+    #     bias_constraint=None
+    # ))
+
+    model.add(layers.MaxPooling1D(pool_size=8))
     model.add(layers.Flatten())
-    model.add(layers.Dense(100, activation='relu'))
-    model.add(layers.Dropout(0.5))
-    model.add(layers.Dense(50, activation='relu'))
-    model.add(layers.Dropout(0.5))
+    model.add(layers.Dropout(0.25))
+    model.add(layers.Dense(1000, activation='relu'))
+    model.add(layers.Dropout(0.25))
     model.add(layers.Dense(10, activation='relu'))
     model.add(layers.Dense(n_outputs, activation='softmax'))
-    opt = tf.keras.optimizers.Adam(learning_rate=0.1)
+    opt = tf.keras.optimizers.Adam(learning_rate=0.05)
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
     model.summary()
@@ -261,7 +308,7 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
 
     # Prep Data
     i = 0
-    print('num of training inputs', len(training_indices))
+    print('num of training inputs:', len(training_indices))
     for day in training_indices:
         day = int(day)
         dataset_history = slice(day - history_length + 1, day + 1)
@@ -314,9 +361,13 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
     # chunks = np.concatenate([chunks, val_chunks])
     # chunk_labels = np.concatenate([chunk_labels, val_chunk_labels])
     repeats = 10
+    print('training inputs shape:', chunks.shape)
+    chunks = chunks.repeat(repeats, 0)
+    chunk_labels = chunk_labels.repeat(repeats)
+    print('training inputs repeated shape:', chunks.shape)
     training_batch_size = (len(testing_indices) + len(validation_indices)) // 20
-    history = model.fit(chunks.repeat(repeats, 0),
-                        chunk_labels.repeat(repeats),
+    history = model.fit(chunks,
+                        chunk_labels,
                         batch_size=training_batch_size,
                         epochs=epochs,
                         verbose='auto',
@@ -350,7 +401,7 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
     # TODO
     print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
 
-    print("Train: Number of buy signals: ", list(chunk_labels.flatten()).count(1))
+    print("Train: Number of buy signals with repeats: ", list(chunk_labels.flatten()).count(1))
     print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
     print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
 
@@ -362,13 +413,13 @@ if __name__ == "__main__":
 
     history_length = 506
     epochs = 40
-    num_of_security_datasets = 3
+    num_of_security_datasets = 22
     num_of_features = 6  # Open,High,Low,Close,Adj Close,Volume
     num_of_outputs = 1  # buy signal yes or no
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets - 1, target_roi=0.01,
+                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets-1, target_roi=0.01,
                       history_length=history_length)
 
     # Run process_datasets() first to save new csv files
