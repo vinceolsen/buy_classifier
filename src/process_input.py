@@ -152,7 +152,7 @@ class ProcessInput:
             files_in_preprocessed_folder.append(self.outfile / file.name)
 
         for security_combination in list(combinations(files_in_preprocessed_folder, 2)):
-            print(security_combination)
+            # print(security_combination)
             df1 = pd.read_csv(security_combination[0])
             df2 = pd.read_csv(security_combination[1])
             df1 = df1.dropna()
