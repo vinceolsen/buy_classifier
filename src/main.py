@@ -326,7 +326,7 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
     model.add(layers.Dense(1000, activation='relu', kernel_initializer='random_normal'))
     model.add(layers.Dropout(0.25))
     model.add(layers.Dense(10, activation='relu', kernel_initializer='random_normal'))
-    model.add(layers.Dense(n_outputs, activation='softmax', kernel_initializer='random_normal'))
+    model.add(layers.Dense(n_outputs, activation='sigmoid', kernel_initializer='random_normal'))
     opt = tf.keras.optimizers.Adam(learning_rate=0.05)
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
