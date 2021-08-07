@@ -88,7 +88,7 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
         use_bias=True,
         depthwise_initializer="glorot_uniform",
         pointwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
+        bias_initializer='random_normal',
         depthwise_regularizer=None,
         pointwise_regularizer=None,
         bias_regularizer=None,
@@ -111,7 +111,7 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
         use_bias=True,
         depthwise_initializer="glorot_uniform",
         pointwise_initializer="glorot_uniform",
-        bias_initializer="zeros",
+        bias_initializer='random_normal',
         depthwise_regularizer=None,
         pointwise_regularizer=None,
         bias_regularizer=None,
@@ -131,7 +131,7 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
         groups=1,
         activation='relu',
         use_bias=True,
-        kernel_initializer="glorot_uniform",
+        kernel_initializer='random_normal',
         bias_initializer="zeros",
         kernel_regularizer=None,
         bias_regularizer=None,
@@ -181,10 +181,10 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
     model.add(layers.MaxPooling1D(pool_size=8))
     model.add(layers.Flatten())
     model.add(layers.Dropout(0.25))
-    model.add(layers.Dense(1000, activation='relu'))
+    model.add(layers.Dense(1000, activation='relu', kernel_initializer='random_normal'))
     model.add(layers.Dropout(0.25))
-    model.add(layers.Dense(10, activation='relu'))
-    model.add(layers.Dense(n_outputs, activation='softmax'))
+    model.add(layers.Dense(10, activation='relu', kernel_initializer='random_normal'))
+    model.add(layers.Dense(n_outputs, activation='softmax', kernel_initializer='random_normal'))
     opt = tf.keras.optimizers.Adam(learning_rate=0.05)
     model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
 
@@ -357,6 +357,10 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
         val_chunk_labels[k] = label
         k += 1
 
+    # Do an initial test of the model
+    eval_loss = model.evaluate(test_chunks, test_chunk_labels)
+    print(eval_loss)
+
     # Train model
     # chunks = np.concatenate([chunks, val_chunks])
     # chunk_labels = np.concatenate([chunk_labels, val_chunk_labels])
@@ -384,7 +388,7 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
                         validation_freq=1,
                         max_queue_size=10,
                         workers=1,
-                        use_multiprocessing=True
+                        use_multiprocessing=False
                         )  # , callbacks=my_callbacks)
     print(history)
 
@@ -412,14 +416,14 @@ if __name__ == "__main__":
     preprocessed_folder = Path("preprocessed_data")
 
     history_length = 506
-    epochs = 40
+    epochs = 10
     num_of_security_datasets = 22
     num_of_features = 6  # Open,High,Low,Close,Adj Close,Volume
     num_of_outputs = 1  # buy signal yes or no
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets-1, target_roi=0.01,
+                      max_buy_holding_period=5, num_of_securtities=num_of_security_datasets-1, target_roi=0.02,
                       history_length=history_length)
 
     # Run process_datasets() first to save new csv files
