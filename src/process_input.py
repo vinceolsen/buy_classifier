@@ -170,12 +170,14 @@ class ProcessInput:
         :return: labels
         """
 
-        self.model_input_stop_index = self.length - self.max_investment_holding_period  # -1 for the column headers?
+        self.model_input_stop_index = self.length - \
+            self.max_investment_holding_period  # -1 for the column headers?
 
         bitcoin_buy_labels = pd.read_csv('preprocessed_data/BTC-USD.csv')
         # print(bitcoin_buy_labels.shape)
         place_holder_value = -1
-        bitcoin_buy_labels = bitcoin_buy_labels.assign(labels=place_holder_value)
+        bitcoin_buy_labels = bitcoin_buy_labels.assign(
+            labels=place_holder_value)
         # print(bitcoin_buy_labels.shape)
         # print(bitcoin_buy_labels)
         bitcoin_buy_labels = bitcoin_buy_labels.to_numpy()
@@ -187,7 +189,7 @@ class ProcessInput:
             next_open_price = bitcoin_buy_labels[day + 1, 1]
             # print('next open price', next_open_price)
             prices_during_investment_period = bitcoin_buy_labels[day + 1:day + self.max_investment_holding_period + 1,
-                                              1:6]
+                                                                 1:6]
             # print('day', day, bitcoin_buy_labels[day])
             # print('day1', day + 1, bitcoin_buy_labels[day + 1])
             # print('day2', day + 2, bitcoin_buy_labels[day + 2])
@@ -198,13 +200,15 @@ class ProcessInput:
             # print('next 10 days', prices_during_investment_period.shape, prices_during_investment_period)
             max_price_over_investment_period = prices_during_investment_period.max()
             # print(max_price_over_investment_period)
-            buy_label = 1 if max_price_over_investment_period >= (1 + self.target_roi) * next_open_price else 0
+            buy_label = 1 if max_price_over_investment_period >= (
+                1 + self.target_roi) * next_open_price else 0
             # print(buy_label)
             bitcoin_buy_labels[day, 7] = buy_label
             # print('new row', bitcoin_buy_labels[day])
 
         # print(bitcoin_buy_labels)
-        bitcoin_buy_labels = np.delete(bitcoin_buy_labels, [1, 2, 3, 4, 5, 6], 1)
+        bitcoin_buy_labels = np.delete(
+            bitcoin_buy_labels, [1, 2, 3, 4, 5, 6], 1)
         # print(bitcoin_buy_labels)
         self.write_np_array_to_csv(bitcoin_buy_labels, 'bitcoin_buy_labels')
         self.labels = bitcoin_buy_labels
@@ -237,7 +241,7 @@ class ProcessInput:
             scaler[i] = MinMaxScaler()
 
             # Target a single dataset
-            dataset = self.dataset[:, :, i:i + 1]
+            dataset = self.dataset[:, 1:, i:i + 1]
 
             # Remove 3rd axis
             dataset = np.squeeze(dataset)
@@ -256,7 +260,7 @@ class ProcessInput:
             # Restack
             norm_data = np.dstack((norm_data, x))
 
-        self.dataset = norm_data
+        self.dataset[:, 1:, :] = norm_data
 
     def get_data(self, training_portion, testing_portion, validation_portion):
         """ Get the data to pass into the ML model
@@ -294,7 +298,8 @@ class ProcessInput:
                                                  self.model_input_start_index + training_count + testing_count + validation_count + 1),
                                                  validation_count)))
 
-        # print('training indices', training_indices)
-        # print('testing indices', testing_indices)
-        # print('validation indices', validation_indices)
+        # print('training indices', training_indices.shape)
+        # print('testing indices', testing_indices.shape)
+        # print('validation indices', validation_indices.shape)
+        # print('total dataset', self.dataset.shape)
         return self.dataset, self.labels, training_indices, testing_indices, validation_indices

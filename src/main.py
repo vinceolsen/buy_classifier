@@ -92,7 +92,8 @@ def results(labels, predictions, history):
     f12 = f1_score(labels, predictions)
 
     self.print_results(accuracy2, precision2, recall2, elapsed_time, f12)
-    self.save_results("Calculated_", elapsed_time, accuracy2, precision2, recall2, loss, f12)
+    self.save_results("Calculated_", elapsed_time, accuracy2,
+                      precision2, recall2, loss, f12)
     """
 
 
@@ -172,7 +173,8 @@ def create_model(n_timesteps, n_features, n_outputs):
     # n_timesteps, n_features, n_outputs = trainX.shape[1], trainX.shape[2], trainy.shape[1]
     model = models.Sequential()
     # model.add(layers.Conv1D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, 4)))
-    model.add(layers.Conv2D(filters=64, kernel_size=3, activation='relu', input_shape=(n_timesteps, n_features, 4)))
+    model.add(layers.Conv2D(filters=64, kernel_size=3,
+                            activation='relu', input_shape=(n_timesteps, n_features, 4)))
     # TODO verify kernel_size for this
     # model.add(layers.Conv1D(filters=64, kernel_size=1, activation='relu'))
     model.add(layers.Conv2D(filters=64, kernel_size=1, activation='relu'))
@@ -182,7 +184,8 @@ def create_model(n_timesteps, n_features, n_outputs):
     model.add(layers.Dense(100, activation='relu'))
     model.add(layers.Dense(n_outputs, activation='softmax'))
     opt = tf.keras.optimizers.Adam(learning_rate=0.01)
-    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy',
+                  optimizer=opt, metrics=['accuracy'])
 
     model.summary()
     return model
@@ -323,12 +326,16 @@ def create_1d_model(n_timesteps, n_features, n_outputs, number_of_security_datas
     model.add(layers.MaxPooling1D(pool_size=8))
     model.add(layers.Flatten())
     model.add(layers.Dropout(0.25))
-    model.add(layers.Dense(1000, activation='relu', kernel_initializer='random_normal'))
+    model.add(layers.Dense(1000, activation='relu',
+                           kernel_initializer='random_normal'))
     model.add(layers.Dropout(0.25))
-    model.add(layers.Dense(10, activation='relu', kernel_initializer='random_normal'))
-    model.add(layers.Dense(n_outputs, activation='sigmoid', kernel_initializer='random_normal'))
+    model.add(layers.Dense(10, activation='relu',
+                           kernel_initializer='random_normal'))
+    model.add(layers.Dense(n_outputs, activation='sigmoid',
+                           kernel_initializer='random_normal'))
     opt = tf.keras.optimizers.Adam(learning_rate=0.05)
-    model.compile(loss='binary_crossentropy', optimizer=opt, metrics=['accuracy'])
+    model.compile(loss='binary_crossentropy',
+                  optimizer=opt, metrics=['accuracy'])
 
     model.summary()
     return model
@@ -364,9 +371,11 @@ def run_experiment(model, dataset, labels, training_indices, testing_indices, va
     # TODO change the 5 to a variable. It comes from the 1:6 slicing in creating chunks below
     chunks = np.empty([len(training_indices), history_length, 5, n_attributes])
     chunk_labels = np.empty([len(training_indices), 1])
-    test_chunks = np.empty([len(testing_indices), history_length, 5, n_attributes])
+    test_chunks = np.empty(
+        [len(testing_indices), history_length, 5, n_attributes])
     test_chunk_labels = np.empty([len(testing_indices), 1])
-    val_chunks = np.empty([len(validation_indices), history_length, 5, n_attributes])
+    val_chunks = np.empty(
+        [len(validation_indices), history_length, 5, n_attributes])
     val_chunk_labels = np.empty([len(validation_indices), 1])
 
     # Prep Data
@@ -419,9 +428,12 @@ def run_experiment(model, dataset, labels, training_indices, testing_indices, va
     # TODO
     print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
 
-    print("Train: Number of buy signals: ", list(chunk_labels.flatten()).count(1))
-    print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
-    print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
+    print("Train: Number of buy signals: ",
+          list(chunk_labels.flatten()).count(1))
+    print("Test Number of buy signals: ", list(
+        test_chunk_labels.flatten()).count(1))
+    print("Val Number of buy signals: ", list(
+        val_chunk_labels.flatten()).count(1))
 
 
 def run_1d_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
@@ -441,11 +453,14 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
     """
     # Add shape to the arrays
     num_of_security_datasets = dataset.shape[2]
-    chunks = np.empty([len(training_indices), history_length * num_of_features, num_of_security_datasets])
+    chunks = np.empty([len(training_indices), history_length *
+                       num_of_features, num_of_security_datasets])
     chunk_labels = np.empty([len(training_indices), 1])
-    test_chunks = np.empty([len(testing_indices), history_length * num_of_features, num_of_security_datasets])
+    test_chunks = np.empty(
+        [len(testing_indices), history_length * num_of_features, num_of_security_datasets])
     test_chunk_labels = np.empty([len(testing_indices), 1])
-    val_chunks = np.empty([len(validation_indices), history_length * num_of_features, num_of_security_datasets])
+    val_chunks = np.empty(
+        [len(validation_indices), history_length * num_of_features, num_of_security_datasets])
     val_chunk_labels = np.empty([len(validation_indices), 1])
 
     # Prep Data
@@ -511,7 +526,8 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
     chunks = chunks.repeat(repeats, 0)
     chunk_labels = chunk_labels.repeat(repeats)
     print('training inputs repeated shape:', chunks.shape)
-    training_batch_size = (len(testing_indices) + len(validation_indices)) // 20
+    training_batch_size = (len(testing_indices) +
+                           len(validation_indices)) // 20
     history = model.fit(chunks,
                         chunk_labels,
                         batch_size=training_batch_size,
@@ -524,7 +540,8 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
                         class_weight=None,
                         sample_weight=None,
                         initial_epoch=0,
-                        steps_per_epoch=(len(testing_indices) * repeats) // training_batch_size,
+                        steps_per_epoch=(len(testing_indices)
+                                         * repeats) // training_batch_size,
                         validation_steps=None,
                         validation_batch_size=None,
                         validation_freq=1,
@@ -546,9 +563,23 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
 
     results(val_chunk_labels, predictions, history)
 
-    print("Train: Number of buy signals with repeats: ", list(chunk_labels.flatten()).count(1))
-    print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
-    print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
+    print("Train: Total labels: ", chunk_labels.shape[0])
+    print("Train: Number of buy signals: ",
+          np.count_nonzero(chunk_labels))
+    print("Train: Number of non buy signals: ",
+          chunk_labels.shape[0]-np.count_nonzero(chunk_labels))
+
+    print("Test: Total labels: ", test_chunk_labels.shape[0])
+    print("Test: Number of buy signals: ",
+          np.count_nonzero(test_chunk_labels))
+    print("Test: Number of non buy signals: ",
+          test_chunk_labels.shape[0]-np.count_nonzero(test_chunk_labels))
+
+    print("Validation: Total labels: ", val_chunk_labels.shape[0])
+    print("Validation: Number of buy signals: ",
+          np.count_nonzero(val_chunk_labels))
+    print("Validation: Number of non buy signals: ",
+          val_chunk_labels.shape[0]-np.count_nonzero(val_chunk_labels))
 
     # TODO
     # print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
@@ -567,7 +598,7 @@ if __name__ == "__main__":
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=5, num_of_securtities=num_of_security_datasets - 1, target_roi=0.02,
+                      max_buy_holding_period=5, num_of_securtities=num_of_security_datasets - 1, target_roi=0.05,
                       history_length=history_length)
 
     # Run process_datasets() first to save new csv files
@@ -578,13 +609,24 @@ if __name__ == "__main__":
 
     # Load datasets from preprocessed_data
     PI.read_preprocessed_data()
-    # PI.normalize_data()  # let's try training without this first just to get everything working and see what effect normalizing has
+    PI.normalize_data()  # let's try training without this first just to get everything working and see what effect normalizing has
 
-    dataset, labels, training_indices, testing_indices, validation_indices = PI.get_data(.80, .10, .10)
+    dataset, labels, training_indices, testing_indices, validation_indices = PI.get_data(
+        .80, .10, .10)
+
+    # counter = 0
+    # print('----Normalization Verification----')
+    # print('Dataset shape:', dataset.shape)
+    # for i in range(dataset.shape[2]):
+    #     print(counter, '. Max value: :', np.amax(dataset[:, 1:, i:i+1]))
+    #     print(counter, '. Min value: :', np.amin(dataset[:, 1:, i:i+1]))
+    #     counter += 1
 
     # model = create_model(history_length, 5, 1)
     # run_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
     #                epochs=epochs)
-    model = create_1d_model(history_length, num_of_features, num_of_outputs, num_of_security_datasets)
+
+    model = create_1d_model(history_length, num_of_features,
+                            num_of_outputs, num_of_security_datasets)
     run_1d_experiment(model, dataset, labels, training_indices, testing_indices, validation_indices, history_length,
                       num_of_features, epochs=epochs)
