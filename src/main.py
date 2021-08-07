@@ -8,6 +8,7 @@ import os
 import pandas as pd
 import sys
 import tensorflow as tf
+import time
 
 from tensorflow.keras import layers, models
 from matplotlib import pyplot as plt
@@ -17,6 +18,147 @@ from process_input import ProcessInput
 
 
 # Update the sys.path to search in the python project directory
+
+def generate_filename(base_string, ext):
+    """ Generate a unique file name by incrementing the number at the end of the file
+    Scans the output directory to see what the highest number is and increments by one
+    If the directory 'output' doesn't exist in the local path, then it is created
+
+    :param base_string: Base string at prepend to the output string
+    :param ext: Extension of the file to create
+    :return: The unique filename string
+    """
+    numbers = []
+    if not os.path.exists('output'):
+        os.makedirs('output')
+
+    # TODO handle different length extensions
+    # len_ext = len(ext) + 1
+    for file in os.scandir('output'):
+        if file.name.startswith(base_string):
+            numbers.append(int(file.name[len(base_string):-4]))
+
+    if len(numbers) > 0:
+        filename = 'output/' + base_string + str(max(numbers) + 1) + '.' + ext
+    else:
+        filename = 'output/' + base_string + '1.' + ext
+
+    return filename
+
+
+def results(labels, predictions, history):
+    #elapsed_time = time.time() - self.start
+    #print("ETIME: ", elapsed_time)
+    #conf_matrix = confusion_matrix(labels, predictions)
+
+    # From history
+    loss = history.history['loss']
+    accuracy = history.history['accuracy']
+    """
+    precision = history.history['precision']
+    recall = history.history['recall']
+
+    false_negatives = history.history['false_negatives']
+    false_positives = history.history['false_positives']
+    true_positives = history.history['true_positives']
+    true_negatives = history.history['true_negatives']
+
+    val_loss = history.history['val_loss']
+    val_accuracy = history.history['val_accuracy']
+    val_precision = history.history['val_precision']
+    val_recall = history.history['val_recall']
+    val_false_negatives = history.history['val_false_negatives']
+    val_false_positives = history.history['val_false_positives']
+    val_true_positives = history.history['val_true_positives']
+    val_true_negatives = history.history['val_true_negatives']
+    """
+
+    #print_results(accuracy, precision, recall, elapsed_time)
+    save_results("History_", accuracy, loss=loss)
+    """
+    self.plot_results("Accuracy", "Accuracy", accuracy)
+    self.plot_results("Precision", "Precision", precision)
+    self.plot_results("Recall", "Recall", recall)
+    self.plot_results("False_Negatives", "False Negatives", false_negatives)
+    self.plot_results("False_Positives", "False Positives", false_positives)
+    self.plot_results("True_Positives", "True Positives", true_positives)
+    self.plot_results("True_Negatives", "True Negatives", true_negatives)
+
+    # Calculated Final averaged? results
+    print("Calculated Final results")
+    accuracy2 = accuracy_score(labels, predictions)
+    precision2 = precision_score(labels, predictions)
+    recall2 = recall_score(labels, predictions)
+    f12 = f1_score(labels, predictions)
+
+    self.print_results(accuracy2, precision2, recall2, elapsed_time, f12)
+    self.save_results("Calculated_", elapsed_time, accuracy2, precision2, recall2, loss, f12)
+    """
+
+
+def save_results(base_filename, accuracy, precision=None, recall=None, loss=None, val_loss=None,
+                 val_accuracy=None, val_precision=None, val_recall=None, val_false_negatives=None,
+                 val_false_positives=None, val_true_negatives=None, val_true_positives=None, f1=None,
+                 false_negatives=None, false_positives=None, true_negatives=None, true_positives=None):
+    """ Save the results to file
+
+    :param base_filename: Name to include in the filename to signify differences
+    :param elapsed_time: The amount of time it took to run the model
+    :param accuracy: The accuracy
+    :param precision: The precision
+    :param recall: The recall
+    :param f1: The F1 score
+    :param false_negatives: The false negatives
+    :param false_positives: The false positives
+    :param true_negatives: The true negatives
+    :param true_positives: The true positives
+    :return: None
+    """
+    filename = generate_filename('bitcoin_results_' + base_filename, 'txt')
+
+    #hours = int(elapsed_time // 3600 % 24)
+    #minutes = int(elapsed_time // 60 % 60)
+    #seconds = int(elapsed_time % 60)
+    with open(filename, 'w') as f:
+        f.write("Results")
+        #f.write("Start time: " + start_time)
+        #f.write("End time: " + str(time.strftime("%H:%M:%S")))
+        #f.write("\nElapsed time in seconds: " + str(elapsed_time))
+        #f.write("\nElapsed time: " + str(hours) + ":" + str(minutes) + ":" + str(seconds))
+        f.write("\nLoss: " + str(loss))
+        f.write("\nAccuracy: " + str(accuracy))
+        """
+        f.write("\nPrecision: " + str(precision))
+        f.write("\nRecall: " + str(recall))
+
+        f.write("\nVal Loss: " + str(val_loss))
+        f.write("\nVal Accuracy: " + str(val_accuracy))
+        f.write("\nVal Precision: " + str(val_precision))
+        f.write("\nVal Recall: " + str(val_recall))
+
+        if val_false_negatives:
+            f.write("\nVal False negatives: " + str(val_false_negatives))
+        if val_false_positives:
+            f.write("\nVal False positives: " + str(val_false_positives))
+        if val_true_negatives:
+            f.write("\nVal True negatives: " + str(val_true_negatives))
+        if val_true_positives:
+            f.write("\nVal True positives: " + str(val_true_positives))
+        if f1:
+            f.write("\nF1 Score: " + str(f1))
+        if false_negatives:
+            f.write("\nFalse negatives: " + str(false_negatives))
+        if false_positives:
+            f.write("\nFalse positives: " + str(false_positives))
+        if true_negatives:
+            f.write("\nTrue negatives: " + str(true_negatives))
+        if true_positives:
+            f.write("\nTrue positives: " + str(true_positives))
+
+        """
+        #f.write("\nConfusion Matrix: \n")
+        #f.write(str(conf_matrix))
+
 
 def create_model(n_timesteps, n_features, n_outputs):
     """
@@ -398,12 +540,14 @@ def run_1d_experiment(model, dataset, labels, training_indices, testing_indices,
              np.argmax(model.predict(x.reshape(1, history_length * num_of_features, num_of_security_datasets)),
                        axis=-1)])
 
-    # TODO
-    print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
+    results(val_chunk_labels, predictions, history)
 
     print("Train: Number of buy signals with repeats: ", list(chunk_labels.flatten()).count(1))
     print("Test Number of buy signals: ", list(test_chunk_labels.flatten()).count(1))
     print("Val Number of buy signals: ", list(val_chunk_labels.flatten()).count(1))
+
+    # TODO
+    #print(confusion_matrix(val_chunk_labels, predictions, labels='y_true'))
 
 
 if __name__ == "__main__":
@@ -412,14 +556,14 @@ if __name__ == "__main__":
     preprocessed_folder = Path("preprocessed_data")
 
     history_length = 506
-    epochs = 40
+    epochs = 10
     num_of_security_datasets = 22
     num_of_features = 6  # Open,High,Low,Close,Adj Close,Volume
     num_of_outputs = 1  # buy signal yes or no
 
     # You can process up to 5 datasets
     PI = ProcessInput(dataset_folder, preprocessed_folder,
-                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets-1, target_roi=0.01,
+                      max_buy_holding_period=10, num_of_securtities=num_of_security_datasets-1, target_roi=0.05,
                       history_length=history_length)
 
     # Run process_datasets() first to save new csv files
